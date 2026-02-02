@@ -1,0 +1,136 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>3D Galaxy Creator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Pre-load JSZip for the emergency download button -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#000000" />
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+    <style>
+      body {
+        background-color: #000000;
+        color: white;
+        overflow: hidden;
+      }
+      #standalone-source-btn {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        z-index: 99999;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      #standalone-source-btn:hover {
+        transform: translateY(-2px) scale(1.02);
+        box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.5);
+      }
+      #standalone-source-btn:active {
+        transform: translateY(0) scale(0.98);
+      }
+    </style>
+    <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@18.3.1",
+    "react-dom": "https://esm.sh/react-dom@18.3.1",
+    "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
+    "three": "https://esm.sh/three@0.159.0",
+    "@react-three/fiber": "https://esm.sh/@react-three/fiber@8.17.10?deps=react@18.3.1,three@0.159.0",
+    "@react-three/drei": "https://esm.sh/@react-three/drei@9.102.6?deps=react@18.3.1,react-dom@18.3.1,three@0.159.0",
+    "@react-three/postprocessing": "https://esm.sh/@react-three/postprocessing@2.16.2?deps=react@18.3.1,three@0.159.0",
+    "leva": "https://esm.sh/leva@0.9.35?deps=react@18.3.1,react-dom@18.3.1",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "react/": "https://esm.sh/react@^19.2.4/"
+  }
+}
+</script>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+
+    <!-- Standalone Download Button (Independent of React) -->
+    <button 
+      id="standalone-source-btn" 
+      onclick="window.downloadCurrentSource()"
+      class="flex items-center gap-2.5 px-6 py-3 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-[11px] font-black uppercase tracking-[0.2em] border border-emerald-500/30 rounded-full backdrop-blur-2xl shadow-2xl"
+    >
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+      </svg>
+      <span>Download Source</span>
+    </button>
+
+    <script type="module" src="/index.tsx"></script>
+
+    <script>
+      // Standalone function to download the project source as a ZIP
+      window.downloadCurrentSource = async function() {
+        if (!window.JSZip) {
+          alert("Preparing download module...");
+          return;
+        }
+
+        const zip = new JSZip();
+        const filesToInclude = [
+          'index.html',
+          'index.tsx',
+          'App.tsx',
+          'metadata.json',
+          'public/manifest.json',
+          'components/GalaxyCanvas.tsx',
+          'components/Galaxy.tsx',
+          'components/Nebula.tsx'
+        ];
+
+        try {
+          console.log('Initiating standalone project bundle...');
+          
+          for (const file of filesToInclude) {
+            try {
+              const response = await fetch('/' + file);
+              if (response.ok) {
+                const text = await response.text();
+                // Clean up path for the zip structure
+                const zipPath = file.startsWith('public/') ? file.substring(7) : file;
+                zip.file(zipPath, text);
+              }
+            } catch (e) {
+              console.warn(`Could not bundle ${file}:`, e);
+            }
+          }
+
+          // Add a baseline package.json
+          zip.file('package.json', JSON.stringify({
+            name: "3d-galaxy-creator",
+            version: "1.0.0",
+            scripts: {
+              "dev": "vite",
+              "build": "vite build",
+              "preview": "vite preview"
+            }
+          }, null, 2));
+
+          const blob = await zip.generateAsync({ type: 'blob' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'galaxy-creator-source.zip';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          console.log('Source bundle download complete.');
+        } catch (err) {
+          console.error('Project bundle failed:', err);
+          alert('Failed to generate source zip. Check console.');
+        }
+      };
+    </script>
+  </body>
+</html>

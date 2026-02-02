@@ -1,0 +1,5 @@
+{
+  "name": "3D Galaxy Creator",
+  "description": "An immersive 3D galaxy creator and starfield simulator built with React and Three.js. Fly through procedurally generated spiral galaxies, witness volumetric nebulas, and enjoy aesthetically pleasing star effects.",
+  "requestFramePermissions": []
+}
